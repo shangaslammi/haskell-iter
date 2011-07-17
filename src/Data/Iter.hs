@@ -124,6 +124,10 @@ ireverse (a ::: i)     = ireverse i ::~ a
 ireverse (i ::~ a)     = a ::: ireverse i
 ireverse (IterIO io)   = IterIO $ fmap ireverse io
 
+iintersperse :: a -> Iter a -> Iter a
+iintersperse x i = do
+    (a, i') <- next i
+    a ::: x ::: iintersperse x i'
 
 ifoldr :: (a -> b -> b) -> b -> Iter a -> Iter b
 ifoldr _ acc StopIteration = return acc
