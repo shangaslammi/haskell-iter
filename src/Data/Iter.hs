@@ -125,7 +125,7 @@ ifoldr :: (a -> b -> b) -> b -> Iter a -> Iter b
 ifoldr _ acc StopIteration = return acc
 ifoldr f acc (a ::: i)     = ifoldr f acc i >>= (return . f a)
 ifoldr f acc (i ::~ a)     = acc `seq` ifoldr f (f a acc) i
-ifoldr f acc (IterIO io)   = liftIO $ io >>= ifoldrIO f acc
+ifoldr f acc (IterIO io)   = IterIO $ io >>= return . ifoldr f acc
 
 ifoldl :: (b -> a -> b) -> b -> Iter a -> Iter b
 ifoldl _ acc StopIteration = return acc
@@ -133,7 +133,7 @@ ifoldl f acc (a ::: i)     = acc `seq` ifoldl f (f acc a) i
 ifoldl f acc (i ::~ a)     = do
     acc' <- ifoldl f acc i
     return $ f acc' a
-ifoldl f acc (IterIO io)   = liftIO $ io >>= ifoldlIO f acc
+ifoldl f acc (IterIO io)   = IterIO $ io >>= return . ifoldl f acc
 
 izip :: Iter a -> Iter b -> Iter (a,b)
 izip StopIteration _     = StopIteration
