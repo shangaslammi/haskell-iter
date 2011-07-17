@@ -114,6 +114,13 @@ idrop n i = do
     (_, i') <- next i
     idrop (n-1) i'
 
+ireverse :: Iter a -> Iter a
+ireverse StopIteration = StopIteration
+ireverse (a ::: i)     = ireverse i ::~ a
+ireverse (i ::~ a)     = a ::: ireverse i
+ireverse (IterIO io)   = IterIO $ io >>= (return . ireverse)
+
+
 ifoldr :: (a -> b -> b) -> b -> Iter a -> Iter b
 ifoldr _ acc StopIteration = return acc
 ifoldr f acc (a ::: i)     = ifoldr f acc i >>= (return . f a)
