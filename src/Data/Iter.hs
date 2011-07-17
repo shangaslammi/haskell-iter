@@ -102,6 +102,18 @@ ifilter f i = do
     guard (f x)
     return x
 
+itake :: Int -> Iter a -> Iter a
+itake 0 _ = StopIteration
+itake n i = do
+    (a, i') <- next i
+    a ::: itake (n-1) i'
+
+idrop :: Int -> Iter a -> Iter a
+idrop 0 i = i
+idrop n i = do
+    (_, i') <- next i
+    idrop (n-1) i'
+
 ifoldr :: (a -> b -> b) -> b -> Iter a -> Iter b
 ifoldr _ acc StopIteration = return acc
 ifoldr f acc (a ::: i)     = ifoldr f acc i >>= (return . f a)
