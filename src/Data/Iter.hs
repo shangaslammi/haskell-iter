@@ -88,6 +88,14 @@ i +++ j = IterIO $ do
 imap :: (a -> b) -> Iter a -> Iter b
 imap = fmap
 
+iconcat :: Iter (Iter a) -> Iter a
+iconcat i = do
+    (a, i') <- next i
+    a +++ iconcat i'
+
+iconcatMap :: (a -> Iter b) -> Iter a -> Iter b
+iconcatMap f = iconcat . imap f
+
 ifilter :: (a -> Bool) -> Iter a -> Iter a
 ifilter f i = do
     x <- i
