@@ -13,6 +13,8 @@ data Iter a
     | a ::: Iter a
     | Iter a ::~ a
 
+infixr 6 :::
+infixl 6 ::~
 
 instance Functor Iter where
     fmap _ StopIteration = StopIteration
@@ -83,6 +85,8 @@ i +++ j = IterIO $ do
     case ni of
         Nothing     -> return j
         Just (a,i') -> return $ a ::: (i' +++ j)
+
+infixr 5 +++
 
 ----- List-like operations for iterators
 imap :: (a -> b) -> Iter a -> Iter b
