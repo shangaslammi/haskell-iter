@@ -97,11 +97,22 @@ ifilter f i = do
 ifoldr :: (a -> b -> b) -> b -> Iter a -> Iter b
 ifoldr _ acc StopIteration = return acc
 ifoldr f acc (a ::: i)     = ifoldr f acc i >>= (return . f a)
-ifoldr f acc (i ::~ a)     = ifoldr f (f a acc) i
+ifoldr f acc (i ::~ a)     = acc `seq` ifoldr f (f a acc) i
 ifoldr f acc (IterIO io)   = liftIO $ io >>= ifoldrIO f acc
+
+ifoldl :: (b -> a -> b) -> b -> Iter a -> Iter b
+ifoldl _ acc StopIteration = return acc
+ifoldl f acc (a ::: i)     = acc `seq` ifoldl f (f acc a) i
+ifoldl f acc (i ::~ a)     = do
+    acc' <- ifoldl f acc i
+    return $ f acc' a
+ifoldl f acc (IterIO io)   = liftIO $ io >>= ifoldlIO f acc
 
 ifoldrIO :: (a -> b -> b) -> b -> Iter a -> IO b
 ifoldrIO f acc i = liftM (fst.fromJust) $ nextIO (ifoldr f acc i)
+
+ifoldlIO :: (b -> a -> b) -> b -> Iter a -> IO b
+ifoldlIO f acc i = liftM (fst.fromJust) $ nextIO (ifoldl f acc i)
 
 ----- Conversion from and to lists -----
 iterList :: [a] -> Iter a
