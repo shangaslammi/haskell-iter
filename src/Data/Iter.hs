@@ -88,6 +88,9 @@ i +++ j = IterIO $ do
 
 infixr 5 +++
 
+ihead :: Iter a -> IO a
+ihead = fmap (fst.fromJust) . nextIO
+
 ----- List-like operations for iterators
 imap :: (a -> b) -> Iter a -> Iter b
 imap = fmap
@@ -159,6 +162,18 @@ iunfold :: (Iter a -> Iter (b, Iter a)) -> Iter a -> Iter b
 iunfold f i = do
     (b, i') <- f i
     b ::: iunfold f i'
+
+iand :: Iter Bool -> IO Bool
+iand = ifoldlIO (&&) True
+
+ior :: Iter Bool -> IO Bool
+ior = ifoldlIO (||) False
+
+iany :: (a -> Bool) -> Iter a -> IO Bool
+iany f = ior . imap f
+
+iall :: (a -> Bool) -> Iter a -> IO Bool
+iall f = iand . imap f
 
 ----- Evaluate fold results in the IO Monad -----
 ifoldrIO :: (a -> b -> b) -> b -> Iter a -> IO b
