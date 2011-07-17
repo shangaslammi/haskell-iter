@@ -175,6 +175,22 @@ iany f = ior . imap f
 iall :: (a -> Bool) -> Iter a -> IO Bool
 iall f = iand . imap f
 
+isum :: Num a => Iter a -> IO a
+isum = ifoldlIO (+) 0
+
+iproduct :: Num a => Iter a -> IO a
+iproduct = ifoldlIO (*) 1
+
+imaximum :: Ord a => Iter a -> IO a
+imaximum i = ihead $ do
+    (a, i') <- next i
+    ifoldl max a i'
+
+iminimum :: Ord a => Iter a -> IO a
+iminimum i = ihead $ do
+    (a, i') <- next i
+    ifoldl min a i'
+
 ----- Evaluate fold results in the IO Monad -----
 ifoldrIO :: (a -> b -> b) -> b -> Iter a -> IO b
 ifoldrIO f acc i = liftM (fst.fromJust) $ nextIO (ifoldr f acc i)
