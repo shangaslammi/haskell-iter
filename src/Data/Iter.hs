@@ -117,6 +117,9 @@ izip i j = do
     (b, j') <- next j
     (a,b) ::: izip i' j'
 
+izipWith :: (a -> b -> c) -> Iter a -> Iter b -> Iter c
+izipWith f i = imap (uncurry f) . izip i
+
 ----- Evaluate fold results in the IO Monad -----
 ifoldrIO :: (a -> b -> b) -> b -> Iter a -> IO b
 ifoldrIO f acc i = liftM (fst.fromJust) $ nextIO (ifoldr f acc i)
