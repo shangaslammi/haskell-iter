@@ -18,24 +18,24 @@ instance Functor Iter where
     fmap _ StopIteration = StopIteration
     fmap f (a ::: i)     = f a ::: fmap f i
     fmap f (i ::~ a)     = fmap f i ::~ f a
-    fmap f (IterIO io)   = IterIO $ io >>= return . fmap f
+    fmap f (IterIO io)   = IterIO $ fmap (fmap f) io
 
 instance Applicative Iter where
-    pure a  = (a ::: StopIteration)
+    pure a  = a ::: StopIteration
 
     StopIteration <*> _ = StopIteration
     _ <*> StopIteration = StopIteration
     (f ::: i) <*> j     = fmap f j +++ (i <*> j)
     (i ::~ f) <*> j     = (i <*> j) +++ fmap f j
-    (IterIO io) <*> j   = IterIO $ io >>= (return . (<*> j))
+    (IterIO io) <*> j   = IterIO $ fmap (<*> j) io
 
 instance Monad Iter where
-    return a = (a ::: StopIteration)
+    return a = a ::: StopIteration
 
     StopIteration >>= _ = StopIteration
     (a ::: i)     >>= f = f a +++ (i >>= f)
-    (i ::~ a)     >>= f = (i >>= f) +++ (f a)
-    (IterIO io)   >>= f = IterIO $ io >>= (return . (>>= f))
+    (i ::~ a)     >>= f = (i >>= f) +++ f a
+    (IterIO io)   >>= f = IterIO $ fmap (>>= f) io
 
 instance MonadIO Iter where
     liftIO io = IterIO $ do
@@ -71,7 +71,7 @@ next (a ::: i)     = return (a, i)
 next (i ::~ a)     = do
     (x,i') <- next i
     return (x, i' ::~ a)
-next (IterIO io)   = IterIO $ io >>= (return . next)
+next (IterIO io)   = IterIO $ fmap next io
 
 (+++) :: Iter a -> Iter a -> Iter a
 StopIteration +++ j = j
@@ -118,14 +118,14 @@ ireverse :: Iter a -> Iter a
 ireverse StopIteration = StopIteration
 ireverse (a ::: i)     = ireverse i ::~ a
 ireverse (i ::~ a)     = a ::: ireverse i
-ireverse (IterIO io)   = IterIO $ io >>= (return . ireverse)
+ireverse (IterIO io)   = IterIO $ fmap ireverse io
 
 
 ifoldr :: (a -> b -> b) -> b -> Iter a -> Iter b
 ifoldr _ acc StopIteration = return acc
-ifoldr f acc (a ::: i)     = ifoldr f acc i >>= (return . f a)
+ifoldr f acc (a ::: i)     = fmap (f a) $ ifoldr f acc i
 ifoldr f acc (i ::~ a)     = acc `seq` ifoldr f (f a acc) i
-ifoldr f acc (IterIO io)   = IterIO $ io >>= return . ifoldr f acc
+ifoldr f acc (IterIO io)   = IterIO $ fmap (ifoldr f acc) io
 
 ifoldl :: (b -> a -> b) -> b -> Iter a -> Iter b
 ifoldl _ acc StopIteration = return acc
@@ -133,7 +133,7 @@ ifoldl f acc (a ::: i)     = acc `seq` ifoldl f (f acc a) i
 ifoldl f acc (i ::~ a)     = do
     acc' <- ifoldl f acc i
     return $ f acc' a
-ifoldl f acc (IterIO io)   = IterIO $ io >>= return . ifoldl f acc
+ifoldl f acc (IterIO io)   = IterIO $ fmap (ifoldl f acc) io
 
 izip :: Iter a -> Iter b -> Iter (a,b)
 izip StopIteration _     = StopIteration
@@ -161,13 +161,12 @@ ifoldlIO f acc i = liftM (fst.fromJust) $ nextIO (ifoldl f acc i)
 
 ----- Conversion from and to lists -----
 iterList :: [a] -> Iter a
-iterList []     = StopIteration
-iterList (x:xs) = x ::: iterList xs
+iterList = foldr (:::) StopIteration
 
 toList :: Iter a -> IO [a]
 toList StopIteration = return []
-toList (a ::: i)     = toList i >>= return . (a:)
-toList (i ::~ a)     = toList i >>= return . (++[a])
+toList (a ::: i)     = fmap (a:) $ toList i
+toList (i ::~ a)     = fmap (++[a]) $ toList i
 
 ----- Sequence IO actions from iterators -----
 ifor :: Iter a -> (a -> IO b) -> IO [b]
