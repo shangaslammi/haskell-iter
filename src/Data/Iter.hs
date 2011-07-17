@@ -108,6 +108,16 @@ ifoldl f acc (i ::~ a)     = do
     return $ f acc' a
 ifoldl f acc (IterIO io)   = liftIO $ io >>= ifoldlIO f acc
 
+izip :: Iter a -> Iter b -> Iter (a,b)
+izip StopIteration _     = StopIteration
+izip _ StopIteration     = StopIteration
+izip (a ::: i) (b ::: j) = (a,b) ::: izip i j
+izip i j = do
+    (a, i') <- next i
+    (b, j') <- next j
+    (a,b) ::: izip i' j'
+
+----- Evaluate fold results in the IO Monad -----
 ifoldrIO :: (a -> b -> b) -> b -> Iter a -> IO b
 ifoldrIO f acc i = liftM (fst.fromJust) $ nextIO (ifoldr f acc i)
 
