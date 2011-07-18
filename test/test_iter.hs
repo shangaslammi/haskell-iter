@@ -1,6 +1,10 @@
 
 import Test.HUnit
+
 import Data.Iter
+import Data.Iter.String
+
+import System.IO
 
 tests =
     ["to and from list" ~: do
@@ -64,6 +68,18 @@ tests =
         let i = iintersperse '.' $ iterList "abc"
         l <- toList i
         l @?= "a.b.c"
+    
+    ,"test iterFile" ~: do
+        let i = iterFile "../test/testfile.txt"
+        l <- toList i
+        l @?= "one\ntwo\nthree"
+        
+    ,"test finalizer" ~: do
+        fh <- openFile "../test/testfile.txt" ReadMode
+        let i = itake 3 $ iterHandle fh
+        l <- toList i
+        l @?= "one"
+        hIsClosed fh >>= (@? "handle closed succesfully after iteration")
     ]
         
 main = runTestTT $ test tests
