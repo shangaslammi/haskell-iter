@@ -131,9 +131,13 @@ ireverse = join . ifoldl (flip (:::)) StopIteration
 
 iintersperse :: a -> Iter a -> Iter a
 iintersperse x (Finalize z i) = Finalize z (iintersperse x i)
-iintersperse x i = do
-    (a, i') <- next i
-    a ::: x ::: iintersperse x i'
+iintersperse x StopIteration  = StopIteration
+iintersperse x (IterIO io)    = IterIO $ fmap (iintersperse x) io
+iintersperse x (a ::: StopIteration) = return a
+iintersperse x (a ::: (IterIO io))   = IterIO $ do
+    i <- io
+    return $ iintersperse x (a !:: i)
+iintersperse x (a ::: i)      = a ::: x ::: iintersperse x i
 
 ifoldr :: (a -> b -> b) -> b -> Iter a -> Iter b
 ifoldr _ acc StopIteration  = return acc
