@@ -11,28 +11,32 @@ data Iter a
     = IterIO (IO (Iter a))
     | StopIteration
     | a ::: Iter a
+    | Finalize (IO ()) (Iter a)
 
 infixr 6 :::
 
 instance Functor Iter where
-    fmap _ StopIteration = StopIteration
-    fmap f (a ::: i)     = f a ::: fmap f i
-    fmap f (IterIO io)   = IterIO $ fmap (fmap f) io
+    fmap _ StopIteration  = StopIteration
+    fmap f (a ::: i)      = f a ::: fmap f i
+    fmap f (IterIO io)    = IterIO $ fmap (fmap f) io
+    fmap f (Finalize z i) = Finalize z (fmap f i)
 
 instance Applicative Iter where
     pure a  = a ::: StopIteration
 
-    StopIteration <*> _ = StopIteration
-    _ <*> StopIteration = StopIteration
-    (f ::: i) <*> j     = fmap f j +++ (i <*> j)
-    (IterIO io) <*> j   = IterIO $ fmap (<*> j) io
+    StopIteration <*> _  = StopIteration
+    _ <*> StopIteration  = StopIteration
+    (f ::: i) <*> j      = fmap f j +++ (i <*> j)
+    (IterIO io) <*> j    = IterIO $ fmap (<*> j) io
+    (Finalize z i) <*> j = Finalize z (i <*> j)
 
 instance Monad Iter where
     return a = a ::: StopIteration
 
-    StopIteration >>= _ = StopIteration
-    (a ::: i)     >>= f = f a +++ (i >>= f)
-    (IterIO io)   >>= f = IterIO $ fmap (>>= f) io
+    StopIteration  >>= _ = StopIteration
+    (a ::: i)      >>= f = f a +++ (i >>= f)
+    (IterIO io)    >>= f = IterIO $ fmap (>>= f) io
+    (Finalize z i) >>= f = Finalize z (i >>= f)
 
 instance MonadIO Iter where
     liftIO io = IterIO $ do
@@ -54,17 +58,35 @@ nextIO :: Iter a -> IO (Maybe (a, Iter a))
 nextIO (IterIO io)    = io >>= nextIO
 nextIO StopIteration  = return Nothing
 nextIO (a ::: i)      = returnIO (a,i)
-
+nextIO (Finalize f i) = do
+    n <- nextIO i
+    case n of
+        Nothing      -> f >> return Nothing
+        Just (a, i') -> returnIO (a, Finalize f i')
+       
 next :: Iter a -> Iter (a, Iter a)
-next StopIteration = StopIteration
-next (a ::: i)     = return (a, i)
-next (IterIO io)   = IterIO $ fmap next io
+next StopIteration  = StopIteration
+next (a ::: i)      = return (a, i)
+next (IterIO io)    = IterIO $ fmap next io
+next (Finalize f i) = IterIO $ do
+    n <- nextIO i
+    case n of
+        Nothing     -> f >> return StopIteration
+        Just (a,i') -> return $ return (a, Finalize f i')
+        
+
+(!::) :: a -> Iter a -> Iter a
+a !:: (Finalize f i) = Finalize f (a ::: i)
+a !:: i              = a ::: i
+
+infixr 6 !::
 
 (+++) :: Iter a -> Iter a -> Iter a
-StopIteration +++ j = j
-i +++ StopIteration = i
-(a ::: i) +++ j     = a ::: (i +++ j)
-(IterIO io) +++ j   = IterIO $ fmap (+++j) io
+i +++ (Finalize f j) = Finalize f (i +++ j)
+StopIteration +++ j  = j
+i +++ StopIteration  = i
+(a ::: i) +++ j      = a ::: (i +++ j)
+(IterIO io) +++ j    = IterIO $ fmap (+++j) io
 
 infixr 5 +++
 
@@ -110,14 +132,16 @@ iintersperse x i = do
     a ::: x ::: iintersperse x i'
 
 ifoldr :: (a -> b -> b) -> b -> Iter a -> Iter b
-ifoldr _ acc StopIteration = return acc
-ifoldr f acc (a ::: i)     = fmap (f a) $ ifoldr f acc i
-ifoldr f acc (IterIO io)   = IterIO $ fmap (ifoldr f acc) io
+ifoldr _ acc StopIteration  = return acc
+ifoldr f acc (a ::: i)      = fmap (f a) $ ifoldr f acc i
+ifoldr f acc (IterIO io)    = IterIO $ fmap (ifoldr f acc) io
+ifoldr f acc (Finalize z i) = Finalize z (ifoldr f i) 
 
 ifoldl :: (b -> a -> b) -> b -> Iter a -> Iter b
-ifoldl _ acc StopIteration = return acc
-ifoldl f acc (a ::: i)     = acc `seq` ifoldl f (f acc a) i
-ifoldl f acc (IterIO io)   = IterIO $ fmap (ifoldl f acc) io
+ifoldl _ acc StopIteration  = return acc
+ifoldl f acc (a ::: i)      = acc `seq` ifoldl f (f acc a) i
+ifoldl f acc (IterIO io)    = IterIO $ fmap (ifoldl f acc) io
+ifoldl f acc (Finalize z i) = Finalize z (ifoldl f acc i)
 
 izip :: Iter a -> Iter b -> Iter (a,b)
 izip StopIteration _     = StopIteration
