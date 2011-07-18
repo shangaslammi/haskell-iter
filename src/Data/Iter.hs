@@ -106,18 +106,21 @@ iconcatMap :: (a -> Iter b) -> Iter a -> Iter b
 iconcatMap f = iconcat . imap f
 
 ifilter :: (a -> Bool) -> Iter a -> Iter a
+ifilter f (Finalize z i) = Finalize z (ifilter f i)
 ifilter f i = do
     x <- i
     guard (f x)
     return x
 
 itake :: Int -> Iter a -> Iter a
+itake n (Finalize z i) = Finalize z (itake n i)
 itake 0 _ = StopIteration
 itake n i = do
     (a, i') <- next i
     a ::: itake (n-1) i'
 
 idrop :: Int -> Iter a -> Iter a
+idrop n (Finalize z i) = Finalize z (idrop n i)
 idrop 0 i = i
 idrop n i = do
     (_, i') <- next i
@@ -127,6 +130,7 @@ ireverse :: Iter a -> Iter a
 ireverse = join . ifoldl (flip (:::)) StopIteration
 
 iintersperse :: a -> Iter a -> Iter a
+iintersperse x (Finalize z i) = Finalize z (iintersperse x i)
 iintersperse x i = do
     (a, i') <- next i
     a ::: x ::: iintersperse x i'
@@ -135,7 +139,7 @@ ifoldr :: (a -> b -> b) -> b -> Iter a -> Iter b
 ifoldr _ acc StopIteration  = return acc
 ifoldr f acc (a ::: i)      = fmap (f a) $ ifoldr f acc i
 ifoldr f acc (IterIO io)    = IterIO $ fmap (ifoldr f acc) io
-ifoldr f acc (Finalize z i) = Finalize z (ifoldr f i) 
+ifoldr f acc (Finalize z i) = Finalize z (ifoldr f acc i)
 
 ifoldl :: (b -> a -> b) -> b -> Iter a -> Iter b
 ifoldl _ acc StopIteration  = return acc
@@ -144,6 +148,9 @@ ifoldl f acc (IterIO io)    = IterIO $ fmap (ifoldl f acc) io
 ifoldl f acc (Finalize z i) = Finalize z (ifoldl f acc i)
 
 izip :: Iter a -> Iter b -> Iter (a,b)
+izip (Finalize z i) (Finalize x j) = Finalize (z >> x) (izip i j)
+izip (Finalize z i) j    = Finalize z (izip i j)
+izip i (Finalize z j)    = Finalize z (izip i j)
 izip StopIteration _     = StopIteration
 izip _ StopIteration     = StopIteration
 izip (a ::: i) (b ::: j) = (a,b) ::: izip i j
@@ -156,6 +163,7 @@ izipWith :: (a -> b -> c) -> Iter a -> Iter b -> Iter c
 izipWith f i = imap (uncurry f) . izip i
 
 iunfold :: (Iter a -> Iter (b, Iter a)) -> Iter a -> Iter b
+iunfold f (Finalize z i) = Finalize z (iunfold f i)
 iunfold f i = do
     (b, i') <- f i
     b ::: iunfold f i'
@@ -200,20 +208,29 @@ iterList :: [a] -> Iter a
 iterList = foldr (:::) StopIteration
 
 toList :: Iter a -> IO [a]
-toList StopIteration = return []
-toList (a ::: i)     = fmap (a:) $ toList i
+toList StopIteration  = return []
+toList (a ::: i)      = fmap (a:) $ toList i
+toList (IterIO io)    = io >>= toList
+toList (Finalize z i) = do
+    l <- toList i
+    z
+    return l
 
 ----- Sequence IO actions from iterators -----
 ifor :: Iter a -> (a -> IO b) -> IO [b]
 ifor i f = isequence $ fmap f i
 
 isequence :: Iter (IO a) -> IO [a]
-isequence StopIteration = return []
-isequence (a ::: i)     = do
+isequence StopIteration  = return []
+isequence (a ::: i)      = do
     x  <- a
     xs <- isequence i
     return (x:xs)
-isequence (IterIO io)   = io >>= isequence
+isequence (IterIO io)    = io >>= isequence
+isequence (Finalize z i) = do
+    l <- isequence i
+    z
+    return l
 
 isequence_ :: Iter (IO a) -> IO ()
 isequence_ = join . ifoldrIO (>>) (return ())
