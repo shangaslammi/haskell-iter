@@ -82,6 +82,12 @@ tests =
         l <- toList i
         l @?= "one"
         hIsClosed fh >>= (@? "handle closed succesfully after iteration")
+    
+    ,"test isplitAt" ~: do
+        let i = isplitAt 3 $ iterList [1..10]
+        (j,k) <- ihead i
+        toList j >>= (@?= [1..3])
+        toList k >>= (@?= [4..10])
     ]
         
 main = runTestTT $ test tests

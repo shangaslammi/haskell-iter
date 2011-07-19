@@ -214,7 +214,7 @@ isplitAt n i = do
     case p of
         Nothing -> return (StopIteration, StopIteration)
         Just (a, i') -> do
-            (j,k) <- isplitAt (n-1) i
+            (j,k) <- isplitAt (n-1) i'
             return (a !:: j, k)
 
 ispan :: (a -> Bool) -> Iter a -> Iter (Iter a, Iter a)
