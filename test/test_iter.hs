@@ -6,6 +6,8 @@ import Data.Iter.String
 
 import System.IO
 
+testFilePath = "../test/testfile.txt"
+
 tests =
     ["to and from list" ~: do
         let l = [1..5]
@@ -70,12 +72,12 @@ tests =
         l @?= "a.b.c"
     
     ,"test iterFile" ~: do
-        let i = iterFile "../test/testfile.txt"
+        let i = iterFile testFilePath
         l <- toList i
         l @?= "one\ntwo\nthree"
         
     ,"test finalizer" ~: do
-        fh <- openFile "../test/testfile.txt" ReadMode
+        fh <- openFile testFilePath ReadMode
         let i = itake 3 $ iterHandle fh
         l <- toList i
         l @?= "one"
