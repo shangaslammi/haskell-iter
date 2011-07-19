@@ -63,7 +63,7 @@ nextIO (Finalize f i) = do
     case n of
         Nothing      -> f >> return Nothing
         Just (a, i') -> returnIO (a, Finalize f i')
-       
+
 next :: Iter a -> Iter (a, Iter a)
 next StopIteration  = StopIteration
 next (a ::: i)      = return (a, i)
@@ -73,7 +73,9 @@ next (Finalize f i) = IterIO $ do
     case n of
         Nothing     -> f >> return StopIteration
         Just (a,i') -> return $ return (a, Finalize f i')
-        
+
+peek :: Iter a -> Iter (Maybe (a, Iter a))
+peek i = liftIO $ nextIO i
 
 (!::) :: a -> Iter a -> Iter a
 a !:: (Finalize f i) = Finalize f (a ::: i)
@@ -199,6 +201,24 @@ iminimum :: Ord a => Iter a -> IO a
 iminimum i = ihead $ do
     (a, i') <- next i
     ifoldl min a i'
+
+
+----- Splitting iterators into sub-iterators -----
+isplitAt :: Int -> Iter a -> Iter (Iter a, Iter a)
+isplitAt n (Finalize z i) = do
+    (a,b) <- isplitAt n i
+    return (a, Finalize z b)
+isplitAt 0 i = return (StopIteration, i)
+isplitAt n i = do
+    p <- peek i
+    case p of
+        Nothing -> return (StopIteration, StopIteration)
+        Just (a, i') -> do
+            (j,k) <- isplitAt (n-1) i
+            return (a !:: j, k)
+
+ispan :: (a -> Bool) -> Iter a -> Iter (Iter a, Iter a)
+ispan = undefined
 
 ----- Evaluate fold results in the IO Monad -----
 ifoldrIO :: (a -> b -> b) -> b -> Iter a -> IO b
