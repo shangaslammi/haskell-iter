@@ -30,6 +30,15 @@ iwords = ifEmpty (StopIteration) $ \i -> do
 iunwords :: Iter IString -> IString
 iunwords = iintercalate " "
 
+iunlines :: Iter IString -> IString
+iunlines = iintercalate "\n"
+
+iunwords' :: Iter String -> IString
+iunwords' = iunwords . imap iterList
+
+iunlines' :: Iter String -> IString
+iunlines' = iunlines . imap iterList
+
 iterFile :: FilePath -> Iter Char
 iterFile fp = IterIO $ do
     fh <- openFile fp ReadMode

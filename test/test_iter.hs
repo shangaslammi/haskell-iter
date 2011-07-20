@@ -153,6 +153,10 @@ tests =
     ,"test iunwords" ~: do
         let i = iunwords $ iwords $ iterList "one two  three  "
         toList i >>= (@?= "one two three")
+
+    ,"test iunwords'" ~: do
+        let i = iunwords' $ iwords' $ iterList "one two   three  "
+        toList i >>= (@?= "one two three")
     ]
 
 main = runTestTT $ test tests
