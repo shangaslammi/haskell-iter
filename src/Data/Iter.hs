@@ -256,6 +256,16 @@ ispan f i = do
 ibreak :: (a -> Bool) -> Iter a -> Iter (Iter a, Iter a)
 ibreak f i = ispan (not.f) i
 
+isplitWhen :: (a -> Bool) -> Iter a -> Iter (Iter a)
+isplitWhen f = iunfold step where
+    step i = do
+        p <- peek i
+        case p of
+            Nothing -> StopIteration
+            Just (a,i') -> do
+                (j,k) <- ibreak f (a !:: i')
+                return (j, idrop 1 k)
+
 ----- Evaluate fold results in the IO Monad -----
 ifoldrIO :: (a -> b -> b) -> b -> Iter a -> IO b
 ifoldrIO f acc i = liftM (fst.fromJust) $ nextIO (ifoldr f acc i)

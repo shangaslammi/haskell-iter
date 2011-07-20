@@ -130,6 +130,17 @@ tests =
         (j,k) <- ihead i
         toList j >>= (@?= [1..4])
         toList k >>= (@?= [5..9])
+
+    ,"test isplitWhen" ~: do
+        let i = isplitWhen (==3) $ iterList [1,2,3,4,5,6,3,1]
+        Just (a, j) <- nextIO i
+        toList a >>= (@?= [1,2])
+        Just (b, k) <- nextIO j
+        toList b >>= (@?= [4,5,6])
+        Just (c, l) <- nextIO k
+        toList c >>= (@?= [1])
+        l' <- toList l
+        null l' @? "end of iteration"
     ]
 
 main = runTestTT $ test tests
