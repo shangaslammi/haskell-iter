@@ -228,8 +228,8 @@ idropWhile f i = idropUntil (not.f) i
 ----- Splitting iterators into sub-iterators -----
 isplitAt :: Int -> Iter a -> Iter (Iter a, Iter a)
 isplitAt n (Finalize z i) = do
-    (a,b) <- isplitAt n i
-    return (a, Finalize z b)
+    (j,k) <- isplitAt n i
+    return (j, Finalize z k)
 isplitAt 0 i = return (StopIteration, i)
 isplitAt n i = do
     p <- peek i
@@ -240,7 +240,18 @@ isplitAt n i = do
             return (a !:: j, k)
 
 ispan :: (a -> Bool) -> Iter a -> Iter (Iter a, Iter a)
-ispan = undefined
+ispan f (Finalize z i) = do
+    (j,k) <- ispan f i
+    return (j, Finalize z k)
+ispan f i = do
+    p <- peek i
+    case p of
+        Nothing -> return (StopIteration, StopIteration)
+        Just (a,i') -> if f a
+            then do
+                (j,k) <- ispan f i'
+                return (a !:: j, k)
+            else return (StopIteration, a !:: i')
 
 ----- Evaluate fold results in the IO Monad -----
 ifoldrIO :: (a -> b -> b) -> b -> Iter a -> IO b
