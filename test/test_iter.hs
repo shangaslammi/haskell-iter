@@ -122,6 +122,14 @@ tests =
         (j,k) <- ihead i
         toList j >>= (@?= [1..4])
         toList k >>= (@?= [5..9])
+
+    ,"test ibreak" ~: do
+        let i = do
+            (j,k) <- ibreak (==5) $ iterList [1..]
+            return (j, itake 5 k)
+        (j,k) <- ihead i
+        toList j >>= (@?= [1..4])
+        toList k >>= (@?= [5..9])
     ]
 
 main = runTestTT $ test tests

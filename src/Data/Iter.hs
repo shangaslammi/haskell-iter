@@ -253,6 +253,9 @@ ispan f i = do
                 return (a !:: j, k)
             else return (StopIteration, a !:: i')
 
+ibreak :: (a -> Bool) -> Iter a -> Iter (Iter a, Iter a)
+ibreak f i = ispan (not.f) i
+
 ----- Evaluate fold results in the IO Monad -----
 ifoldrIO :: (a -> b -> b) -> b -> Iter a -> IO b
 ifoldrIO f acc i = liftM (fst.fromJust) $ nextIO (ifoldr f acc i)
