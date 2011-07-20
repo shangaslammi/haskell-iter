@@ -114,20 +114,6 @@ ifilter f i = do
     guard (f x)
     return x
 
-itake :: Int -> Iter a -> Iter a
-itake n (Finalize z i) = Finalize z (itake n i)
-itake 0 _ = StopIteration
-itake n i = do
-    (a, i') <- next i
-    a ::: itake (n-1) i'
-
-idrop :: Int -> Iter a -> Iter a
-idrop n (Finalize z i) = Finalize z (idrop n i)
-idrop 0 i = i
-idrop n i = do
-    (_, i') <- next i
-    idrop (n-1) i'
-
 ireverse :: Iter a -> Iter a
 ireverse = join . ifoldl (flip (:::)) StopIteration
 
@@ -202,6 +188,42 @@ iminimum i = ihead $ do
     (a, i') <- next i
     ifoldl min a i'
 
+
+----- Take and drop -----
+itake :: Int -> Iter a -> Iter a
+itake n (Finalize z i) = Finalize z (itake n i)
+itake 0 _ = StopIteration
+itake n i = do
+    (a, i') <- next i
+    a ::: itake (n-1) i'
+
+idrop :: Int -> Iter a -> Iter a
+idrop n (Finalize z i) = Finalize z (idrop n i)
+idrop 0 i = i
+idrop n i = do
+    (_, i') <- next i
+    idrop (n-1) i'
+
+itakeUntil :: (a -> Bool) -> Iter a -> Iter a
+itakeUntil f (Finalize z i) = Finalize z (itakeUntil f i)
+itakeUntil f i = do
+    (a,i') <- next i
+    when (f a) StopIteration
+    a !:: itakeUntil f i'
+
+itakeWhile :: (a -> Bool) -> Iter a -> Iter a
+itakeWhile f i = itakeUntil (not.f) i
+
+idropUntil :: (a -> Bool) -> Iter a -> Iter a
+idropUntil f (Finalize z i) = Finalize z (idropUntil f i)
+idropUntil f i = do
+    (a, i') <- next i
+    if (f a)
+        then a !:: i'
+        else idropUntil f i'
+
+idropWhile :: (a -> Bool) -> Iter a -> Iter a
+idropWhile f i = idropUntil (not.f) i
 
 ----- Splitting iterators into sub-iterators -----
 isplitAt :: Int -> Iter a -> Iter (Iter a, Iter a)

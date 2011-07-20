@@ -97,6 +97,22 @@ tests =
         toList k' >>= (@?= "two")
         toList j  >>= (@?= "one")
         hIsClosed fh >>= (@? "handle closed succesfully after iteration")
+
+    ,"test itakeWhile" ~: do
+        let i = itakeWhile (<5) $ iterList [1..]
+        toList i >>= (@?= [1..4])
+
+    ,"test itakeUntil" ~: do
+        let i = itakeUntil (>5) $ iterList [1..]
+        toList i >>= (@?= [1..5])
+
+    ,"test idropWhile" ~: do
+        let i = idropWhile (<5) $ iterList [1..10]
+        toList i >>= (@?= [5..10])
+
+    ,"test idropUntil" ~: do
+        let i = idropUntil (>5) $ iterList [1..10]
+        toList i >>= (@?= [6..10])
     ]
 
 main = runTestTT $ test tests
