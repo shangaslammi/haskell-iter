@@ -27,6 +27,9 @@ iwords = ifEmpty (StopIteration) $ \i -> do
     let rest = iwords k
     ifEmpty rest (\j -> j !:: iwords k) j
 
+iunwords :: Iter IString -> IString
+iunwords = iintercalate " "
+
 iterFile :: FilePath -> Iter Char
 iterFile fp = IterIO $ do
     fh <- openFile fp ReadMode

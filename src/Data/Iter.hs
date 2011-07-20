@@ -137,6 +137,10 @@ iintersperse x (a ::: (IterIO io))   = IterIO $ do
     return $ iintersperse x (a !:: i)
 iintersperse x (a ::: i)      = a ::: x ::: iintersperse x i
 
+iintercalate :: [a] -> Iter (Iter a) -> Iter a
+iintercalate l (Finalize z i) = Finalize z (iintercalate l i)
+iintercalate l i = iconcat . iintersperse (iterList l) $ i
+
 ifoldr :: (a -> b -> b) -> b -> Iter a -> Iter b
 ifoldr _ acc StopIteration  = return acc
 ifoldr f acc (a ::: i)      = fmap (f a) $ ifoldr f acc i
