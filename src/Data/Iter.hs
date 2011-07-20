@@ -95,6 +95,16 @@ infixr 5 +++
 ihead :: Iter a -> IO a
 ihead = fmap (fst.fromJust) . nextIO
 
+listify :: Iter a -> Iter [a]
+listify = liftIO . toList
+
+ifEmpty :: Iter b -> (Iter a -> Iter b) -> Iter a -> Iter b
+ifEmpty then_ else_ i = do
+    p <- peek i
+    case p of
+        Nothing -> then_
+        Just (a,i') -> else_ (a !:: i')
+
 ----- List-like operations for iterators
 imap :: (a -> b) -> Iter a -> Iter b
 imap = fmap
@@ -265,6 +275,9 @@ isplitWhen f = iunfold step where
             Just (a,i') -> do
                 (j,k) <- ibreak f (a !:: i')
                 return (j, idrop 1 k)
+
+isplitWhen' :: (a -> Bool) -> Iter a -> Iter [a]
+isplitWhen' f = iconcatMap listify . isplitWhen f
 
 ----- Evaluate fold results in the IO Monad -----
 ifoldrIO :: (a -> b -> b) -> b -> Iter a -> IO b

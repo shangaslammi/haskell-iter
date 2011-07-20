@@ -141,7 +141,14 @@ tests =
         toList c >>= (@?= [1])
         l' <- toList l
         null l' @? "end of iteration"
+
+    ,"test isplitWhen'" ~: do
+        let i = isplitWhen' (==3) $ iterList [1,2,3,4,5,6,3,1]
+        toList i >>= (@?= [[1,2],[4,5,6],[1]])
+
+    ,"test iwords'" ~: do
+        let i = iwords' $ iterList "one two   three  "
+        toList i >>= (@?= ["one", "two", "three"])
     ]
 
 main = runTestTT $ test tests
-
