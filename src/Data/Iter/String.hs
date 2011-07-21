@@ -39,12 +39,12 @@ iunwords' = iunwords . imap iterList
 iunlines' :: Iter String -> IString
 iunlines' = iunlines . imap iterList
 
-iterFile :: FilePath -> Iter Char
+iterFile :: FilePath -> IString
 iterFile fp = IterIO $ do
     fh <- openFile fp ReadMode
     return $ iterHandle fh
 
-iterHandle :: Handle -> Iter Char
+iterHandle :: Handle -> IString
 iterHandle fh = Finalize (closeHandle) $ IterIO $ nextChar fh where
     closeHandle = hClose fh
     nextChar fh = do
@@ -55,8 +55,11 @@ iterHandle fh = Finalize (closeHandle) $ IterIO $ nextChar fh where
                 return StopIteration
             Right c -> return $ c ::: IterIO (nextChar fh)
 
-iwriteFile :: FilePath -> Iter Char -> IO ()
+iwriteFile :: FilePath -> IString -> IO ()
 iwriteFile p i = withFile p WriteMode (flip iwriteHandle i)
 
-iwriteHandle :: Handle -> Iter Char -> IO ()
+iwriteHandle :: Handle -> IString -> IO ()
 iwriteHandle h = isequence_ . imap (hPutChar h)
+
+igetContents :: IString
+igetContents = iterHandle stdin

@@ -7,6 +7,8 @@ import Control.Applicative (Applicative(..))
 import Control.Monad
 import Control.Monad.IO.Class
 
+import System.Environment
+
 data Iter a
     = IterIO (IO (Iter a))
     | StopIteration
@@ -302,6 +304,9 @@ toList (Finalize z i) = do
     l <- toList i
     z
     return l
+
+iterArgs :: Iter String
+iterArgs = IterIO $ fmap iterList getArgs
 
 ----- Sequence IO actions from iterators -----
 ifor :: Iter a -> (a -> IO b) -> IO [b]
