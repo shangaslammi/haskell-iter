@@ -55,3 +55,8 @@ iterHandle fh = Finalize (closeHandle) $ IterIO $ nextChar fh where
                 return StopIteration
             Right c -> return $ c ::: IterIO (nextChar fh)
 
+iwriteFile :: FilePath -> Iter Char -> IO ()
+iwriteFile p i = withFile p WriteMode (flip iwriteHandle i)
+
+iwriteHandle :: Handle -> Iter Char -> IO ()
+iwriteHandle h = isequence_ . imap (hPutChar h)
