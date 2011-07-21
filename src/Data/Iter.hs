@@ -83,6 +83,17 @@ peek i = liftIO $ nextIO i
 a !:: (Finalize f i) = Finalize f (a ::: i)
 a !:: i              = a ::: i
 
+innerCons :: a -> Iter (Iter a) -> Iter (Iter a)
+innerCons a = ifEmpty (return $ return a) $ \i -> do
+    (j, i') <- next i
+    (a !:: j) !:: i'
+
+innerConcat :: Iter a -> Iter (Iter a) -> Iter (Iter a)
+innerConcat i = ifEmpty (return i) $ \j -> do
+    (k, j') <- next j
+    (i +++ k) !:: j'
+
+
 infixr 6 !::
 
 (+++) :: Iter a -> Iter a -> Iter a
