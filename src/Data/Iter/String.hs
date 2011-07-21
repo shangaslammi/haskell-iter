@@ -12,12 +12,6 @@ import System.IO.Error
 
 type IString = Iter Char
 
-ilines' :: IString -> Iter String
-ilines' = isplitWhen' (=='\n')
-
-iwords' :: IString -> Iter String
-iwords' = iconcatMap listify . iwords
-
 ilines :: IString -> Iter IString
 ilines = isplitWhen (=='\n')
 
@@ -32,6 +26,12 @@ iunwords = iintercalate " "
 
 iunlines :: Iter IString -> IString
 iunlines = iintercalate "\n"
+
+ilines' :: IString -> Iter String
+ilines' = isplitWhen' (=='\n')
+
+iwords' :: IString -> Iter String
+iwords' = iconcatMap listify . iwords
 
 iunwords' :: Iter String -> IString
 iunwords' = iunwords . imap iterList
