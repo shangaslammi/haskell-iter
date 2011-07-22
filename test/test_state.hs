@@ -13,7 +13,7 @@ tests =
             b <- getNext
             c <- getNext
             return (a,b,c)
-        runIter s i >>= (@?= (1,2,3))
+        runIterIO s i >>= (@?= (1,2,3))
     ]
 
 main = runTestTT $ test tests

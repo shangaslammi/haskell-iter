@@ -27,9 +27,14 @@ modifyIter = undefined
 modifyIter_ :: (Iter a -> Iter b) -> IState a ()
 modifyIter_ = undefined
 
+runIter :: IState a b -> Iter a -> Iter b
+runIter s = IterIO . fmap (return.fst) . runIStateIO s
 
-runIter :: IState a b -> Iter a -> IO b
-runIter s = fmap fst . runIState s
+runIState :: IState a b -> Iter a -> Iter (b, Iter a)
+runIState s = IterIO . fmap return . runIStateIO s
 
-runIState :: IState a b -> Iter a -> IO (b, Iter a)
-runIState s = runStateT (runI s)
+runIterIO :: IState a b -> Iter a -> IO b
+runIterIO s = fmap fst . runIStateIO s
+
+runIStateIO :: IState a b -> Iter a -> IO (b, Iter a)
+runIStateIO s = runStateT (runI s)
