@@ -2,11 +2,13 @@
 module Data.Iter.State where
 
 import Data.Iter
+import Data.Functor
+import Control.Applicative
 import Control.Monad.State
 import Control.Monad.Trans
 
 newtype IState a b = IState { runI :: StateT (Iter a) IO b }
-    deriving (Monad, MonadIO, MonadState (Iter a))
+    deriving (Functor, Applicative, Monad, MonadIO, MonadState (Iter a))
 
 
 getNext :: IState a a
