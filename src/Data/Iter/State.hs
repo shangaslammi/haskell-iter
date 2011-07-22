@@ -21,6 +21,13 @@ getNext = do
             put i'
             return a
 
+modifyIter :: (Iter a -> Iter (b, Iter a)) -> IState a b
+modifyIter = undefined
+
+modifyIter_ :: (Iter a -> Iter b) -> IState a ()
+modifyIter_ = undefined
+
+
 runIter :: IState a b -> Iter a -> IO b
 runIter s = fmap fst . runIState s
 
