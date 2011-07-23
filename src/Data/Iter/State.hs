@@ -1,17 +1,27 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving, DeriveDataTypeable #-}
 module Data.Iter.State where
 
 import Data.Iter
 import Data.Functor
+import Data.Typeable
 import Control.Applicative
 import Control.Monad.State
 import Control.Monad.Trans
+import Control.Exception
 
 newtype IState a b = IState { runI :: StateT (Iter a) IO b }
     deriving (Functor, Applicative, Monad, MonadIO, MonadState (Iter a))
 
+data IterExhausted = IterExhausted deriving (Show, Typeable)
+
+instance Exception IterExhausted
+
 getNext :: IState a a
-getNext = modifyIter next
+getNext = do
+    n <- tryNext
+    case n of
+        Nothing -> throw IterExhausted
+        Just a  -> return a
 
 tryNext :: IState a (Maybe a)
 tryNext = do
