@@ -13,6 +13,16 @@ newtype IState a b = IState { runI :: StateT (Iter a) IO b }
 getNext :: IState a a
 getNext = modifyIter next
 
+tryNext :: IState a (Maybe a)
+tryNext = do
+    i <- get
+    n <- liftIO $ nextIO i
+    case n of
+        Nothing -> return Nothing
+        Just (a,i') -> do
+            put i'
+            return $ Just a
+
 withNext :: (a -> b) -> IState a b
 withNext f = fmap f getNext
 

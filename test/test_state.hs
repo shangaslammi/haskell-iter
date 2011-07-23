@@ -36,6 +36,17 @@ tests =
         (a,i') <- runIStateIO s i
         a @?= 3
         toList i' >>= (@?= [3..10])
+
+    ,"test tryNext" ~: do
+        let i = iterList [1,2,3]
+        let s = do
+            a <- tryNext
+            b <- tryNext
+            c <- tryNext
+            d <- tryNext
+            return (a,b,c,d)
+
+        runIterIO s i >>= (@?= (Just 1, Just 2, Just 3, Nothing))
     ]
 
 main = runTestTT $ test tests
