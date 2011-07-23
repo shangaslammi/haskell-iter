@@ -10,22 +10,24 @@ import Control.Monad.Trans
 newtype IState a b = IState { runI :: StateT (Iter a) IO b }
     deriving (Functor, Applicative, Monad, MonadIO, MonadState (Iter a))
 
-
 getNext :: IState a a
-getNext = do
-    i <- get
-    n <- liftIO $ nextIO i
-    case n of
-        Nothing -> error "iteration exhausted"
-        Just (a, i') -> do
-            put i'
-            return a
+getNext = modifyIter next
+
+withNext :: (a -> b) -> IState a b
+withNext f = fmap f getNext
+
+withNext2 :: (a -> a -> b) -> IState a b
+withNext2 f = liftM2 f getNext getNext
 
 modifyIter :: (Iter a -> Iter (b, Iter a)) -> IState a b
-modifyIter = undefined
+modifyIter f = do
+    i <- get
+    (b, i') <- liftIO $ ihead (f i)
+    put i'
+    return b
 
-modifyIter_ :: (Iter a -> Iter b) -> IState a ()
-modifyIter_ = undefined
+modifyIter_ :: (Iter a -> Iter a) -> IState a ()
+modifyIter_ = modify
 
 runIter :: IState a b -> Iter a -> Iter b
 runIter s = IterIO . fmap (return.fst) . runIStateIO s
