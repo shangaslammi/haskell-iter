@@ -33,6 +33,16 @@ tryNext = do
             put i'
             return $ Just a
 
+peekNext :: IState a (Maybe a)
+peekNext = do
+    i <- get
+    n <- liftIO $ nextIO i
+    case n of
+        Nothing -> return Nothing
+        Just (a, i') -> do
+            put $ a !:: i'
+            return $ Just a
+
 withNext :: (a -> b) -> IState a b
 withNext f = fmap f getNext
 
