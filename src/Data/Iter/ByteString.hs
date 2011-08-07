@@ -45,3 +45,12 @@ bytes i = do
 
 toByteString :: IByteString -> IO ByteString
 toByteString = fmap B.concat . toList
+
+takeBytes :: Int -> IByteString -> IByteString
+takeBytes 0 _ = StopIteration
+takeBytes n i = do
+    (chunk, i') <- next i
+    let l = B.length chunk
+    if l < n
+        then chunk !:: takeBytes (n-l) i'
+        else return $ B.take n chunk
