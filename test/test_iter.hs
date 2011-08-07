@@ -83,6 +83,17 @@ tests =
         l @?= "one"
         hIsClosed fh >>= (@? "handle closed succesfully after iteration")
 
+    ,"test finalizer after next" ~: do
+        fh <- openFile testFilePath ReadMode
+        let i = do
+            let h = iterHandle fh
+            (_,h') <- next h
+            itake 3 h'
+
+        l <- toList i
+        l @?= "ne\n"
+        hIsClosed fh >>= (@? "handle closed succesfully after iteration")
+
     ,"test isplitAt" ~: do
         let i = isplitAt 3 $ iterList [1..10]
         (j,k) <- ihead i
