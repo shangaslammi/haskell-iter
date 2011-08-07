@@ -28,7 +28,11 @@ iwriteFile :: FilePath -> IByteString -> IO ()
 iwriteFile = undefined
 
 iwriteHandle :: Handle -> IByteString -> IO ()
-iwriteHandle = undefined
+iwriteHandle h i = do
+    n <- nextIO i
+    case n of
+        Nothing          -> return ()
+        Just (chunk, i') -> B.hPut h chunk >> iwriteHandle h i'
 
 toByteString :: IByteString -> IO ByteString
 toByteString = fmap B.concat . toList
