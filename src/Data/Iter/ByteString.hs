@@ -29,3 +29,6 @@ iwriteFile = undefined
 
 iwriteHandle :: Handle -> IByteString -> IO ()
 iwriteHandle = undefined
+
+toByteString :: IByteString -> IO ByteString
+toByteString = fmap B.concat . toList
