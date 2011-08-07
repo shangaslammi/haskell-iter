@@ -25,7 +25,7 @@ iterHandle h = Finalize (closeHandle) $ IterIO $ nextChunk h where
 
 
 iwriteFile :: FilePath -> IByteString -> IO ()
-iwriteFile = undefined
+iwriteFile fp = withBinaryFile fp WriteMode . flip iwriteHandle
 
 iwriteHandle :: Handle -> IByteString -> IO ()
 iwriteHandle h i = do
