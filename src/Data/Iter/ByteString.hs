@@ -19,9 +19,9 @@ iterHandle h = Finalize (closeHandle) $ IterIO $ nextChunk h where
     closeHandle = hClose h
     nextChunk h = do
         chunk <- B.hGetSome h chunkSize
-        if B.null chunk
+        return $ if B.null chunk
             then StopIteration
-            else return $ chunk :: IterIO (nextChunk h)
+            else chunk ::: IterIO (nextChunk h)
 
 
 iwriteFile :: FilePath -> IByteString -> IO ()
