@@ -2,6 +2,7 @@
 module Data.Iter.ByteString where
 
 import Data.Iter
+import Data.Word
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as B
 
@@ -33,6 +34,14 @@ iwriteHandle h i = do
     case n of
         Nothing          -> return ()
         Just (chunk, i') -> B.hPut h chunk >> iwriteHandle h i'
+
+iterBytes :: ByteString -> Iter Word8
+iterBytes = iterList . B.unpack
+
+bytes :: IByteString -> Iter Word8
+bytes i = do
+    (chunk, i') <- next i
+    iterBytes chunk +++ bytes i'
 
 toByteString :: IByteString -> IO ByteString
 toByteString = fmap B.concat . toList
