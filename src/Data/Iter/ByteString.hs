@@ -63,3 +63,36 @@ dropBytes n i = do
     if l < n
         then dropBytes (n-l) i'
         else B.drop n chunk !:: i'
+
+dropBytesWhile :: (Word8 -> Bool) -> IByteString -> IByteString
+dropBytesWhile f i = do
+    (chunk, i') <- next i
+    let c = B.dropWhile f chunk
+    if B.null c
+        then dropBytesWhile f i'
+        else c !:: i'
+
+takeBytesWhile :: (Word8 -> Bool) -> IByteString -> IByteString
+takeBytesWhile f i = do
+    (chunk, i') <- next i
+    let c = B.takeWhile f chunk
+    if B.length c == B.length chunk
+        then chunk !:: takeBytesWhile f i'
+        else return c
+
+splitBytesAt :: Int -> IByteString -> Iter (IByteString, IByteString)
+splitBytesAt 0 i = return (StopIteration, i)
+splitBytesAt n i = do
+    p <- peek i
+    case p of
+        Nothing -> return (StopIteration, StopIteration)
+        Just (chunk, i') -> do
+            let l = B.length chunk
+            if l < n
+                then do
+                    (a,b) <- splitBytesAt (n-l) i'
+                    return (chunk !:: a, b)
+                else do
+                    let (a,b) = B.splitAt n chunk
+                    return (return a, b !:: i')
+
