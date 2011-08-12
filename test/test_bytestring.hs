@@ -19,6 +19,10 @@ tests =
     ,"test takeBytes" ~: do
         let i = bytes $ takeBytes 3 $ iterFile testFilePath
         toList i >>= (@?= [1,2,3])
+
+    ,"test dropBytes" ~: do
+        let i = bytes $ dropBytes 3 $ iterFile testFilePath
+        toList i >>= (@?= [4..9])
     ]
 
 main = runTestTT $ test tests

@@ -54,3 +54,12 @@ takeBytes n i = do
     if l < n
         then chunk !:: takeBytes (n-l) i'
         else return $ B.take n chunk
+
+dropBytes :: Int -> IByteString -> IByteString
+dropBytes 0 i = i
+dropBytes n i = do
+    (chunk, i') <- next i
+    let l = B.length chunk
+    if l < n
+        then dropBytes (n-l) i'
+        else B.drop n chunk !:: i'
