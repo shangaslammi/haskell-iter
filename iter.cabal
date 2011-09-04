@@ -1,0 +1,14 @@
+Name:               iter
+Version:            0.1
+Synopsis:           Iterator utilties
+Description:        Alternative iteration model for IO resources.
+License:            MIT
+License-file:       LICENSE
+Author:             Sami Hangaslammi
+Maintainer:         Sami Hangaslammi <shang@iki.fi>
+Build-Type:         Simple
+Cabal-Version:      >=1.2
+
+Hs-Source-Dirs:     src
+Exposed-modules:    Data.Iter, Data.Iter.State, Data.Iter.String
+Build-Depends:      base >= 4, transformers >= 0.2.2.0, mtl >= 2.0.1.0
