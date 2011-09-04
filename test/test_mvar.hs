@@ -15,7 +15,7 @@ tests =
         let i = ilines' . iterFile $ testFilePath
         forkIO $ pushToMVar var i
 
-        let j = iterMVar var
+        let j = itake 3 . iterMVar $ var
         toList j >>= (@?= ["one", "two", "three"])
     ]
 
