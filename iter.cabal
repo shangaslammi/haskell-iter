@@ -10,5 +10,6 @@ Build-Type:         Simple
 Cabal-Version:      >=1.2
 
 Hs-Source-Dirs:     src
-Exposed-modules:    Data.Iter, Data.Iter.State, Data.Iter.String
+Exposed-modules:    Data.Iter, Data.Iter.State, Data.Iter.String,
+                    Data.Iter.MVar
 Build-Depends:      base >= 4, transformers >= 0.2.2.0, mtl >= 2.0.1.0
